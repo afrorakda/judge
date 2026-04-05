@@ -23,7 +23,7 @@
             margin: 0;
             display: flex;
             justify-content: center;
-            height: 100dvh; /* 動的ビューポートで固定 */
+            height: 100dvh;
             -webkit-font-smoothing: antialiased;
             overflow: hidden;
             user-select: none;
@@ -33,36 +33,46 @@
         .container {
             width: 100%;
             max-width: 420px;
-            padding: 30px 20px; /* 上部余白を詰め、全体をスリムに */
+            padding: 30px 20px;
             box-sizing: border-box;
             text-align: center;
             display: flex;
             flex-direction: column;
-            justify-content: space-between; /* 要素を上下に分散 */
+            justify-content: space-between;
         }
 
         header { margin-bottom: 10px; }
         h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 2px; letter-spacing: -1px; }
         .subtitle { font-size: 0.8rem; color: #666; font-weight: 600; letter-spacing: 0.5px; }
 
-        /* Verdict Area */
         .verdict-area {
             flex-grow: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            min-height: 250px; /* 位置を固定するための最小高 */
         }
 
         .verdict-display {
-            font-size: 3.5rem; /* 初期は控えめに */
+            font-size: 3.5rem;
             font-weight: 900;
             line-height: 1;
             letter-spacing: -2px;
-            transition: font-size 0.1s ease;
+            transition: font-size 0.1s ease, opacity 0.05s ease; /* 透明度の変化を追加 */
+            opacity: 1;
         }
         .verdict-display.result {
-            font-size: 8.5rem; /* 判決時に巨大化 */
+            font-size: 8.5rem;
+        }
+
+        /* Flashアニメーション: 一瞬消えて、パッと出る */
+        @keyframes flashVeridct {
+            0% { opacity: 0.1; }
+            100% { opacity: 1; }
+        }
+        .verdict-display.flashing {
+            animation: flashVeridct 0.1s ease-out;
         }
 
         .status-msg {
@@ -75,10 +85,9 @@
             height: 1rem;
         }
 
-        /* Action Button: スリム化 */
         .action-btn {
             width: 100%;
-            padding: 18px; /* 24pxから18pxにスリム化 */
+            padding: 18px;
             background: var(--main);
             color: #fff;
             border: none;
@@ -134,7 +143,7 @@
 
     <div class="verdict-area">
         <div class="verdict-display" id="verdictDisplay">?</div>
-        <div class="status-msg" id="statusMsg">Focus on your choice</div>
+        <div class="status-msg" id="statusMsg">Prepare your mind</div>
     </div>
 
     <div class="bottom-controls">
@@ -168,8 +177,13 @@
     const judgeBtn = document.getElementById('judgeBtn');
 
     function giveVerdict() {
+        if (judgeBtn.disabled) return;
+
         const results = ['YES', 'NO'];
         const finalResult = results[Math.floor(Math.random() * results.length)];
+        
+        // Flash feedback before showing the result
+        triggerFlash();
         
         // Impactful Verdict
         verdictDisplay.classList.add('result');
@@ -178,6 +192,12 @@
         
         // Force the decision for 3 seconds
         lockJudge();
+    }
+
+    function triggerFlash() {
+        verdictDisplay.classList.remove('flashing'); // リセット
+        void verdictDisplay.offsetWidth; // リフローを強制
+        verdictDisplay.classList.add('flashing');
     }
 
     function lockJudge() {
@@ -189,11 +209,17 @@
             if (timeLeft <= 0) {
                 clearInterval(countdown);
                 judgeBtn.disabled = false;
-                statusMsg.textContent = "Ready for next decision";
+                resetToDefault(); // 「？」に戻す
             } else {
                 statusMsg.textContent = `Locked for ${timeLeft}s`;
             }
         }, 1000);
+    }
+
+    function resetToDefault() {
+        verdictDisplay.classList.remove('result');
+        verdictDisplay.textContent = "?";
+        statusMsg.textContent = "Ready.";
     }
 
     function showModal() { document.getElementById('modal').style.display = 'flex'; }
